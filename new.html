@@ -1,0 +1,127 @@
+﻿<html>
+<head>
+    <title>Webpage of Chitraaksh</title>
+    <style>
+        h1 {
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+        }
+
+        h2 {
+            text-align: center;
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+        }
+
+        body {
+            background-color: lightslategrey;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            justify-content: flex-start; /* Align items from the top */
+        }
+
+        .content {
+            text-align: center;
+        }
+
+        .container {
+            width: 100%;
+            background-color: #514d62;
+            max-width: 500px;
+            margin-bottom: 20px;
+            position: relative;
+            height: 30px;
+            top: 25%; /* Positioning it below the title */
+            transform: translateY(-50%);
+        }
+
+        .progress-bar {
+            width: 0%; /* Start from 0% */
+            height: 100%; /* Take full height of the container */
+            background-color: #000de0;
+            text-align: center;
+            line-height: 30px;
+            color: goldenrod;
+            margin: 0;
+            border: 1px solid #000000;
+            font-weight: bold;
+        }
+
+        button {
+            margin: 0 150px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid black;
+            background-color: #c89b9b;
+            cursor: pointer;
+            color: darkred;
+            height:50px;
+            width: 100px;
+            font-weight: bold;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            max-width: 500px;
+            position: absolute; /* Position it absolutely */
+            top: calc(25% + 40px); /* 40px to place below the progress bar (25% + 30px height + 10px margin) */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>A Progress Bar</h1>
+    <h2>Made By Chitraaksh</h2>
+    <div class="container">
+        <div class="progress-bar">0%</div>
+    </div>
+    <div class="button-container">
+        <button onclick="increaseProgress()">Start</button>
+        <button onclick="resetProgress()">Reset</button>
+    </div>
+    <script>
+        let id;
+
+        function increaseProgress() {
+            var elem = document.getElementsByClassName("progress-bar")[0];
+            var width = parseInt(elem.style.width) || 0;
+
+            if (id) clearInterval(id);
+
+            id = setInterval(frame, 20);
+
+            function frame() {
+                if (width >= 100) {
+                    clearInterval(id);
+                } else {
+                    width++;
+                    elem.style.width = width + "%";
+                    elem.innerHTML = width + "%";
+                }
+            }
+        }
+
+        function resetProgress() {
+            var elem = document.getElementsByClassName("progress-bar")[0];
+            if (id) clearInterval(id);
+            elem.style.width = "0%";
+            elem.innerHTML = "0%";
+        }
+    </script>
+</body>
+</html>
