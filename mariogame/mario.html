@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mario-like Game with Score Counter and Coins</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background: #00a2e8; /* Updated background color */
+        }
+
+        .player {
+            width: 30px;
+            height: 50px;
+            position: absolute;
+            bottom: 20px; /* Adjusted for ground height */
+            background: url('stand.png') no-repeat; /* Initial standing frame */
+            background-size: 30px 50px; /* Resize image to 30x50 pixels */
+            transition: transform 0.1s; /* Smooth transition for flipping */
+        }
+
+        .ground {
+            position: absolute;
+            width: 100%;
+            height: 50px; /* Height of the ground */
+            bottom: 0;
+            background: url('ground.png') repeat-x;
+            background-size: 50px 50px; /* Resize image to 50x50 pixels */
+        }
+
+        .ground-above {
+            position: absolute;
+            width: 100%;
+            height: 50px; /* Height of the ground */
+            bottom: 50px; /* Positioned above the ground */
+            background: url('ground.png') repeat-x;
+            background-size: 50px 50px; /* Resize image to 50x50 pixels */
+        }
+
+        .coin {
+            width: 40px; /* Resize image to 40x40 pixels */
+            height: 40px; /* Resize image to 40x40 pixels */
+            position: absolute;
+            background: url('coin.png') no-repeat;
+            background-size: 40px 40px; /* Resize image to 40x40 pixels */
+        }
+
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="player" id="player"></div>
+    <div class="ground" id="ground"></div>
+    <div class="ground-above" id="ground-above"></div>
+    <div class="score" id="score">Score: 0</div>
+
+    <!-- Add four coins to the game -->
+    <div class="coin" id="coin1" style="left: 200px; top: 520px;"></div>
+    <div class="coin" id="coin2" style="left: 400px; top: 530px;"></div>
+    <div class="coin" id="coin3" style="left: 600px; top: 550px;"></div>
+    <div class="coin" id="coin4" style="left: 800px; top: 500px;"></div>
+
+    <!-- Add audio elements for background music, coin sound, and jump sound -->
+    <audio id="backgroundMusic" src="background.mp3" loop></audio>
+    <audio id="coinSound" src="coin.mp3"></audio>
+    <audio id="jumpSound" src="jump.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const player = document.getElementById('player');
+        const scoreElement = document.getElementById('score');
+        const coins = [
+            document.getElementById('coin1'),
+            document.getElementById('coin2'),
+            document.getElementById('coin3'),
+            document.getElementById('coin4')
+        ];
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const coinSound = document.getElementById('coinSound');
+        const jumpSound = document.getElementById('jumpSound');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let playerX = 50;
+        let playerY = canvas.height - 150; // Adjusted for ground height and player height
+        const playerSpeed = 5;
+        const runSpeed = 10; // Speed when the Shift key is pressed
+        let currentSpeed = playerSpeed;
+        let score = 0;
+
+        // Variables for jumping
+        let playerVelocityY = 0;
+        const gravity = 0.5;
+        const jumpStrength = -10;
+        let isJumping = false;
+        let isWalking = false;
+        let currentFrame = 0;
+        let facingRight = true;
+        let keys = {};
+
+        // Play background music after user interaction
+        function startBackgroundMusic() {
+            backgroundMusic.play();
+            document.removeEventListener('keydown', startBackgroundMusic);
+        }
+
+        document.addEventListener('keydown', startBackgroundMusic);
+
+        function updatePlayerPosition() {
+            // Update player's position based on velocity
+            playerY += playerVelocityY;
+            playerVelocityY += gravity;
+
+            // Prevent the player from falling through the ground
+            if (playerY >= canvas.height - 150) {
+                playerY = canvas.height - 150;
+                playerVelocityY = 0;
+                isJumping = false;
+            }
+
+            // Update playerX based on key presses for smoother movement
+            if (keys['ArrowRight']) {
+                playerX += currentSpeed;
+            }
+            if (keys['ArrowLeft']) {
+                playerX -= currentSpeed;
+            }
+
+            player.style.left = playerX + 'px';
+            player.style.top = playerY + 'px';
+
+            // Check for coin collisions
+            checkCoinCollisions();
+        }
+
+        function checkCoinCollisions() {
+            coins.forEach(coin => {
+                const coinRect = coin.getBoundingClientRect();
+                const playerRect = player.getBoundingClientRect();
+
+                if (playerRect.left < coinRect.left + coinRect.width &&
+                    playerRect.left + playerRect.width > coinRect.left &&
+                    playerRect.top < coinRect.top + coinRect.height &&
+                    playerRect.top + playerRect.height > coinRect.top) {
+                    // Collision detected
+                    coin.style.display = 'none'; // Hide the coin
+                    score += 50; // Increment score by 50
+                    scoreElement.textContent = `Score: ${score}`;
+                    coinSound.play(); // Play coin collection sound
+                }
+            });
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updatePlayerPosition();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function switchFrame() {
+            if (isJumping) {
+                player.style.backgroundImage = `url('jump.png')`;
+            } else if (isWalking) {
+                currentFrame = (currentFrame === 4) ? 1 : currentFrame + 1;
+                player.style.backgroundImage = `url('walk${currentFrame}.png')`;
+            } else {
+                player.style.backgroundImage = `url('stand.png')`;
+            }
+        }
+
+        function startWalking(event) {
+            if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                isWalking = true;
+                switchFrame();
+
+                if (event.key === 'ArrowRight' && !facingRight) {
+                    facingRight = true;
+                    player.style.transform = 'scaleX(1)'; // Face right
+                }
+                if (event.key === 'ArrowLeft' && facingRight) {
+                    facingRight = false;
+                    player.style.transform = 'scaleX(-1)'; // Face left (flipped)
+                }
+            }
+
+            keys[event.key] = true; // Track key press state
+
+            if (keys['Shift']) {
+                currentSpeed = runSpeed;
+            } else {
+                currentSpeed = playerSpeed;
+            }
+
+            if ((event.key === 'ArrowUp' || event.key === ' ') && !isJumping) { // Allow jumping with up arrow or space, only if not already jumping
+                playerVelocityY = jumpStrength;
+                isJumping = true;
+                jumpSound.play(); // Play the jumping sound
+            }
+        }
+
+        function stopWalking(event) {
+            if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                isWalking = false;
+            }
+            keys[event.key] = false; // Track key release state
+
+            if (!keys['ArrowRight'] && !keys['ArrowLeft']) {
+                currentSpeed = playerSpeed; // Reset speed when not walking
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowRight' || event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'Shift' || event.key === ' ') {
+                startWalking(event);
+            }
+            if ((event.key === 'ArrowUp' || event.key === ' ') && !isJumping) { // Allow jumping with up arrow or space, only if not already jumping
+                playerVelocityY = jumpStrength;
+                isJumping = true;
+                jumpSound.play();  // Play the jumping sound
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            stopWalking(event);
+        });
+
+        setInterval(switchFrame, 100); // Switch frames every 100ms for smoother animation
+
+        // Call the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
